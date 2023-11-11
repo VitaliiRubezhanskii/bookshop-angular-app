@@ -1,0 +1,9 @@
+<!-- Container to inject the Okta Sign-In Widget -->
+
+<div *ngIf="!user" id="okta-login-container"></div>
+
+<div *ngIf="user">
+  Hello {{user}}
+
+  <button (click)="logout()">Logout</button>
+</div>

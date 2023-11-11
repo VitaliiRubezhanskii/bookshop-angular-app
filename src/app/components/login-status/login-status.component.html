@@ -1,0 +1,21 @@
+<div class="login-status-header">
+
+    <!-- <div *ngIf="(isAuthenticated$ | async)" class="login-status-user-info">
+        Welcome back USER!
+    </div>
+
+    <button *ngIf="!(isAuthenticated$ | async)" routerLink="/login" class="security-btn">Login</button>
+
+    <button *ngIf="(isAuthenticated$ | async)" (click)="logout()" class="security-btn">Logout</button>
+
+    <button *ngIf="(isAuthenticated$ | async)" routerLink="/members" class="security-btn ml-1">Member</button>
+
+    <button *ngIf="(isAuthenticated$ | async)" routerLink="/order-history" class="security-btn ml-1">Orders</button> -->
+    <ng-container *ngIf="(isAuthenticated$ | async) === false; else signout">
+        <button (click)="signIn()"> Sign in </button>
+      </ng-container>
+      
+      <ng-template #signout>
+        <button (click)="signOut()">Sign out</button>
+      </ng-template>
+</div>
