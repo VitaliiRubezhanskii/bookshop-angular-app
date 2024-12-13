@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { ProductCategoryMenuComponent} from './components/product-category-menu/product-category-menu.component'
 import { ProductListComponent } from './components/product-list/product-list.component';
@@ -23,6 +23,7 @@ import { OrderHistoryComponent } from './components/order-history/order-history.
 import { AuthInterceptorService } from './services/auth-interceptor.service';
 import { MaterialModule } from './material.module'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { MonacoEditorModule, MONACO_PATH } from '@materia-ui/ngx-monaco-editor';
 import { OKTA_CONFIG, OktaAuthModule, OktaCallbackComponent, OktaAuthGuard, OktaConfig } from '@okta/okta-angular';
 import myAppConfig from './../config/my-app-config';
 
@@ -62,14 +63,20 @@ const oktaAuth = new OktaAuth({
     HttpClientModule,
     NgbModule,
     ReactiveFormsModule,
+    FormsModule,
     OktaAuthModule.forRoot({oktaAuth}),
     AppRoutingModule,
+    MonacoEditorModule
   ],
  
   providers: [
     ProductService,
     { provide: OKTA_CONFIG, useValue: { oktaAuth } },
-    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptorService, multi: true}
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptorService, multi: true},
+    {
+      provide: MONACO_PATH,
+      useValue: 'https://unpkg.com/monaco-editor@0.36.1/min/vs'
+    },
   ],
   bootstrap: [AppComponent]
 })
