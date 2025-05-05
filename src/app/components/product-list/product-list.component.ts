@@ -8,7 +8,7 @@ import { CartService } from '../../services/cart.service';
 
 @Component({
   selector: 'app-product-list',
-  templateUrl: './product-list-grid.component.html',
+  templateUrl: './product-list.component.html',
   styleUrls: ['./product-list.component.css']
 })
 export class ProductListComponent implements OnInit {
@@ -30,9 +30,14 @@ export class ProductListComponent implements OnInit {
               private route: ActivatedRoute) { }
 
   ngOnInit() {
-    this.route.paramMap.subscribe(() => {
-      this.listProducts();
-    });
+    this.route.params.subscribe(() => this.initProducts())
+  }
+
+  initProducts(){
+    this.productService.getProductsFromApi('').subscribe(data => {
+      console.log('data ' + JSON.stringify(data.products))
+      this.products = data.products;
+    })
   }
 
   listProducts() {
@@ -66,7 +71,7 @@ export class ProductListComponent implements OnInit {
     // now search for the products using keyword
     this.productService.searchProductsPaginate(this.thePageNumber, this.thePageSize,
                                                theKeyword).subscribe(this.processResult());
-                                               
+
   }
 
   handleListProducts() {
@@ -99,15 +104,17 @@ export class ProductListComponent implements OnInit {
     console.log(`currentCategoryId=${this.currentCategoryId}, thePageNumber=${this.thePageNumber}`);
 
     // now get the products for the given category id
-    this.productService.getProductListPaginate(this.thePageNumber , this.thePageSize, this.currentCategoryId).subscribe(this.processResult());
+    // this.productService.getProductList(this.thePageNumber , this.thePageSize, this.currentCategoryId)
+    this.productService.getProducts()
+      .subscribe(this.processResult());
   }
 
   processResult() {
     return data => {
       this.products = data.products;
-      // this.thePageNumber = data.page.number + 1;
-      // this.thePageSize = data.page.size;
-      // this.theTotalElements = data.page.totalElements;
+      this.thePageNumber = data.page.number + 1;
+      this.thePageSize = data.page.size;
+      this.theTotalElements = data.page.totalElements;
     };
   }
 
@@ -118,7 +125,7 @@ export class ProductListComponent implements OnInit {
   }
 
   addToCart(theProduct: Product) {
-    
+
     console.log(`Adding to cart: ${theProduct.name}, ${theProduct.unitPrice}`);
 
     // TODO ... do the real work

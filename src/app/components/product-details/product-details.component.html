@@ -1,18 +1,26 @@
-<div class="detail-section">
-    <div class="container-fluid">
+<div class="book-detail-container" *ngIf="product">
+  <button class="back-button" (click)="goBack()">← Back</button>
 
-        <img src="{{ product.imageUrl }}" class="detail-img">
+  <div class="book-detail-card">
+    <img [src]="product.imageUrl" alt="{{ product.name }}" class="book-cover" />
 
-        <h3>{{ product.name }}</h3>
-        <div class="price">{{ product.unitPrice | currency:'USD' }}</div>
-        <mat-card>
-            <button class="mat-button" mat-button  (click)="addToCart()">Add to cart</button>
-        </mat-card>
+    <div class="book-info">
+      <h2 class="book-title">{{ product.name }}</h2>
+      <p class="book-description">{{ product.description }}</p>
 
-        <hr>
-        <h4>Description</h4>
-        <p>{{ product.description }}</p>
+      <div class="book-meta">
+        <p class="book-price"><strong>Price:</strong> ${{ product.unitPrice }}</p>
+        <p class="book-stock" [class.out-of-stock]="false">
+          <strong>Status:</strong> {{ product.unitsInStock == 0 ? 'In Stock' : 'Out of Stock' }}
+        </p>
+      </div>
 
-        <a routerLink="/products" class="mt-5">Back to Product List</a>
+      <button
+        class="add-to-cart-btn"
+        [disabled]="product.unitsInStock == 0"
+        (click)="addToCart()">
+        Add to Cart
+      </button>
     </div>
+  </div>
 </div>

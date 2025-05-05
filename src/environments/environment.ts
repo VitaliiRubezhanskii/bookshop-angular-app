@@ -4,7 +4,7 @@
 
 export const environment = {
   production: false,
-  luv2shopApiUrl: "https://localhost:8080/api"
+  luv2shopApiUrl: "http://localhost:3000/api"
 };
 
 /*

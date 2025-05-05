@@ -1,0 +1,60 @@
+{
+  "orders": [
+    {
+      "id": "1a2b3c",
+      "orderTrackingNumber": "TRACK123456",
+      "totalPrice": 199.99,
+      "totalQuantity": 3,
+      "email": "clientA@gmail.com",
+      "dateCreated": "2024-11-10T14:32:00Z"
+    },
+    {
+      "id": "2b3c4d",
+      "orderTrackingNumber": "TRACK234567",
+      "totalPrice": 49.5,
+      "totalQuantity": 1,
+      "email": "clientA@gmail.com",
+      "dateCreated": "2024-12-01T10:15:00Z"
+    },
+    {
+      "id": "3c4d5e",
+      "orderTrackingNumber": "TRACK345678",
+      "totalPrice": 89.0,
+      "totalQuantity": 2,
+      "email": "clientB@gmail.com",
+      "dateCreated": "2025-01-05T18:45:00Z"
+    },
+    {
+      "id": "4d5e6f",
+      "orderTrackingNumber": "TRACK456789",
+      "totalPrice": 120.75,
+      "totalQuantity": 4,
+      "email": "clientA@gmail.com",
+      "dateCreated": "2025-02-20T09:30:00Z"
+    },
+    {
+      "id": "5e6f7g",
+      "orderTrackingNumber": "TRACK567890",
+      "totalPrice": 300.0,
+      "totalQuantity": 6,
+      "email": "clientB@gmail.com",
+      "dateCreated": "2025-03-03T16:00:00Z"
+    },
+    {
+      "id": "6f7g8h",
+      "orderTrackingNumber": "TRACK678901",
+      "totalPrice": 15.99,
+      "totalQuantity": 1,
+      "email": "clientC@gmail.com",
+      "dateCreated": "2025-03-25T11:20:00Z"
+    },
+    {
+      "id": "7g8h9i",
+      "orderTrackingNumber": "TRACK789012",
+      "totalPrice": 64.25,
+      "totalQuantity": 2,
+      "email": "clientC@gmail.com",
+      "dateCreated": "2025-04-10T20:10:00Z"
+    }
+  ]
+}

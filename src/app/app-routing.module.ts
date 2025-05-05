@@ -7,13 +7,11 @@ import { LoginComponent } from './components/login/login.component';
 import { CheckoutComponent } from './components/checkout/checkout.component';
 import { CartDetailsComponent } from './components/cart-details/cart-details.component';
 import { ProductDetailsComponent } from './components/product-details/product-details.component';
-import { OKTA_CONFIG, OktaAuthModule, OktaCallbackComponent, OktaAuthGuard } from '@okta/okta-angular';
 
-const routes: Routes = [ 
+const routes: Routes = [
   {path: 'order-history', component: OrderHistoryComponent},
   {path: 'members', component: MembersPageComponent},
 
-  {path: 'login/callback', component: OktaCallbackComponent},
   {path: 'login', component: LoginComponent},
 
   {path: 'checkout', component: CheckoutComponent},

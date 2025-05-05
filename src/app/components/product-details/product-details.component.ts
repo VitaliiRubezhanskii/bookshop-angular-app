@@ -19,21 +19,12 @@ export class ProductDetailsComponent implements OnInit {
               private route: ActivatedRoute) { }
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(() => {
-      this.handleProductDetails();
-    })
+    this.route.paramMap.subscribe(() => this.handleProductDetails())
   }
 
   handleProductDetails() {
-
-    // get the "id" param string. convert string to a number using the "+" symbol
     const theProductId: string = this.route.snapshot.paramMap.get('id');
-
-    this.productService.getProduct(theProductId).subscribe(
-      data => {
-        this.product = data;
-      }
-    )
+    this.productService.getProduct(theProductId).subscribe(data => this.product = data)
   }
 
   addToCart() {
@@ -41,7 +32,12 @@ export class ProductDetailsComponent implements OnInit {
     console.log(`Adding to cart: ${this.product.name}, ${this.product.unitPrice}`);
     const theCartItem = new CartItem(this.product);
     this.cartService.addToCart(theCartItem);
-    
+
+  }
+
+  goBack() {
+    // Use Angular Router to navigate back
+    window.history.back();
   }
 
 }

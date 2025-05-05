@@ -1,4 +1,80 @@
-.mat-button {
-    width: 100px;
-    color: palevioletred;
+.book-detail-container {
+  padding: 2rem;
+  max-width: 1000px;
+  margin: auto;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  color: #1976d2;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+.book-detail-card {
+  display: flex;
+  gap: 2rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 2rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.book-cover {
+  width: 250px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.book-info {
+  flex: 1;
+}
+
+.book-title {
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.book-author {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.book-description {
+  margin-bottom: 1.5rem;
+}
+
+.book-meta {
+  margin-bottom: 1.5rem;
+
+  .book-price {
+    font-size: 1.1rem;
+    color: #2e7d32;
+  }
+
+  .book-stock {
+    font-size: 1rem;
+    &.out-of-stock {
+      color: red;
+    }
+  }
+}
+
+.add-to-cart-btn {
+  padding: 0.6rem 1.5rem;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+  }
 }
