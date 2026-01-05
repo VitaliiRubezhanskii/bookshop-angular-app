@@ -2,14 +2,17 @@ import { Component, OnInit } from '@angular/core';
 import { ProductService } from 'src/app/services/product.service';
 import { Product } from 'src/app/common/product';
 import { ActivatedRoute } from '@angular/router';
-import { timeoutWith } from 'rxjs/operators';
 import { CartItem } from '../../common/cart-item';
 import { CartService } from '../../services/cart.service';
+import {CommonModule} from "@angular/common";
+import {FormsModule} from "@angular/forms";
 
 @Component({
-  selector: 'app-product-list',
-  templateUrl: './product-list.component.html',
-  styleUrls: ['./product-list.component.css']
+    selector: 'app-product-list',
+    templateUrl: './product-list.component.html',
+    styleUrls: ['./product-list.component.css'],
+    imports:[CommonModule, FormsModule],
+    standalone: true
 })
 export class ProductListComponent implements OnInit {
 

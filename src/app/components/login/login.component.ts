@@ -1,17 +1,23 @@
-import {Component} from "@angular/core";
-import {OAuthService} from "angular-oauth2-oidc";
+import {Component, inject} from '@angular/core';
+import {Router} from '@angular/router';
+import {AuthService} from "../../auth.service";
 
 @Component({
-  selector: 'app-should-login',
+  selector: 'app-user-login',
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.css'],
-  standalone: false
+  styleUrls: ['login.component.css'],
+  standalone: true
 })
 export class LoginComponent {
-  constructor(private authService: OAuthService) { }
+  authService: AuthService = inject(AuthService);
+  router: Router = inject(Router);
 
-  public login($event: any) {
-    $event.preventDefault();
-    this.authService.initLoginFlow();
+  async onGoogleSignIn(): Promise<void> {
+    try {
+      await this.authService.googleLogin();
+      await this.router.navigateByUrl('/products');
+    } catch (error) {
+      console.error('Google Sign-In error:', error);
+    }
   }
 }

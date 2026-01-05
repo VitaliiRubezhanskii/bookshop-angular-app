@@ -4,7 +4,14 @@
 
 export const environment = {
   production: false,
-  luv2shopApiUrl: "http://localhost:3000/api"
+  luv2shopApiUrl: "http://localhost:3000/api",
+  firebase: {
+    apiKey: "AIzaSyBFXPWYKi6nZGlcMSi5GIH6ltQ-FwVviFw",
+    authDomain: "user-subscription-service.firebaseapp.com",
+    projectId: "user-subscription-service",
+    messagingSenderId: "33823052882",
+    appId: "user-subscription-service",
+  }
 };
 
 /*

@@ -1,10 +1,13 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import {FormGroup, FormsModule, ReactiveFormsModule} from '@angular/forms';
+import {CommonModule} from "@angular/common";
 
 @Component({
   selector: 'app-address-form',
   templateUrl: './address-form.component.html',
-  styleUrls: ['address-form.component.css']
+  styleUrls: ['address-form.component.css'],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  standalone: true
 })
 export class AddressFormComponent {
   @Input() formGroupName!: string;

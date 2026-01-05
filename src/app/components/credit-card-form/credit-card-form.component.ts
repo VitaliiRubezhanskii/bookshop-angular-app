@@ -1,10 +1,13 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import {FormGroup, FormsModule, ReactiveFormsModule} from '@angular/forms';
+import {CommonModule} from "@angular/common";
 
 @Component({
-  selector: 'app-credit-card-form',
-  templateUrl: './credit-card-form.component.html',
-  styleUrls: ['./credit-card-form.component.css']
+    selector: 'app-credit-card-form',
+    templateUrl: './credit-card-form.component.html',
+    styleUrls: ['./credit-card-form.component.css'],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule],
+    standalone: true
 })
 export class CreditCardFormComponent {
   @Input() formGroup!: FormGroup;

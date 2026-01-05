@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormGroup, FormBuilder, FormControl, Validators } from '@angular/forms';
+import {FormGroup, FormBuilder, FormControl, Validators, FormsModule, ReactiveFormsModule} from '@angular/forms';
 import { Luv2ShopFormService } from 'src/app/services/luv2-shop-form.service';
 import { Country } from 'src/app/common/country';
 import { State } from 'src/app/common/state';
@@ -10,11 +10,16 @@ import { Router } from '@angular/router';
 import { Order } from 'src/app/common/order';
 import { OrderItem } from 'src/app/common/order-item';
 import { Purchase } from 'src/app/common/purchase';
+import {CommonModule} from "@angular/common";
+import {CreditCardFormComponent} from "../credit-card-form/credit-card-form.component";
+import {AddressFormComponent} from "../address-form/address-form.component";
 
 @Component({
   selector: 'app-checkout',
   templateUrl: './checkout.component.html',
-  styleUrls: ['./checkout.component.css']
+  styleUrls: ['./checkout.component.css'],
+  imports: [AddressFormComponent, CreditCardFormComponent, CommonModule, FormsModule, ReactiveFormsModule],
+  standalone: true,
 })
 export class CheckoutComponent implements OnInit {
 
@@ -22,7 +27,7 @@ export class CheckoutComponent implements OnInit {
 
   totalPrice: number = 0;
   totalQuantity: number = 0;
-  
+
   creditCardYears: number[] = [];
   creditCardMonths: number[] = [];
 
@@ -30,7 +35,7 @@ export class CheckoutComponent implements OnInit {
 
   shippingAddressStates: State[] = [];
   billingAddressStates: State[] = [];
-    
+
   storage: Storage = sessionStorage;
 
   constructor(private formBuilder: FormBuilder,
@@ -40,7 +45,7 @@ export class CheckoutComponent implements OnInit {
               private router: Router) { }
 
   ngOnInit(): void {
-    
+
     this.reviewCartDetails();
 
     // read the user's email address from browser storage
@@ -48,42 +53,42 @@ export class CheckoutComponent implements OnInit {
 
     this.checkoutFormGroup = this.formBuilder.group({
       customer: this.formBuilder.group({
-        firstName: new FormControl('', 
-                              [Validators.required, 
-                               Validators.minLength(2), 
+        firstName: new FormControl('',
+                              [Validators.required,
+                               Validators.minLength(2),
                                Luv2ShopValidators.notOnlyWhitespace]),
 
-        lastName:  new FormControl('', 
-                              [Validators.required, 
-                               Validators.minLength(2), 
+        lastName:  new FormControl('',
+                              [Validators.required,
+                               Validators.minLength(2),
                                Luv2ShopValidators.notOnlyWhitespace]),
-                               
+
         email: new FormControl(theEmail,
                               [Validators.required, Validators.pattern('^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$')])
       }),
       shippingAddress: this.formBuilder.group({
-        street: new FormControl('', [Validators.required, Validators.minLength(2), 
+        street: new FormControl('', [Validators.required, Validators.minLength(2),
                                      Luv2ShopValidators.notOnlyWhitespace]),
-        city: new FormControl('', [Validators.required, Validators.minLength(2), 
+        city: new FormControl('', [Validators.required, Validators.minLength(2),
                                    Luv2ShopValidators.notOnlyWhitespace]),
         state: new FormControl('', [Validators.required]),
         country: new FormControl('', [Validators.required]),
-        zipCode: new FormControl('', [Validators.required, Validators.minLength(2), 
+        zipCode: new FormControl('', [Validators.required, Validators.minLength(2),
                                       Luv2ShopValidators.notOnlyWhitespace])
       }),
       billingAddress: this.formBuilder.group({
-        street: new FormControl('', [Validators.required, Validators.minLength(2), 
+        street: new FormControl('', [Validators.required, Validators.minLength(2),
                                      Luv2ShopValidators.notOnlyWhitespace]),
-        city: new FormControl('', [Validators.required, Validators.minLength(2), 
+        city: new FormControl('', [Validators.required, Validators.minLength(2),
                                    Luv2ShopValidators.notOnlyWhitespace]),
         state: new FormControl('', [Validators.required]),
         country: new FormControl('', [Validators.required]),
-        zipCode: new FormControl('', [Validators.required, Validators.minLength(2), 
+        zipCode: new FormControl('', [Validators.required, Validators.minLength(2),
                                       Luv2ShopValidators.notOnlyWhitespace])
       }),
       creditCard: this.formBuilder.group({
         cardType: new FormControl('', [Validators.required]),
-        nameOnCard:  new FormControl('', [Validators.required, Validators.minLength(2), 
+        nameOnCard:  new FormControl('', [Validators.required, Validators.minLength(2),
                                           Luv2ShopValidators.notOnlyWhitespace]),
         cardNumber: new FormControl('', [Validators.required, Validators.pattern('[0-9]{16}')]),
         securityCode: new FormControl('', [Validators.required, Validators.pattern('[0-9]{3}')]),
@@ -176,7 +181,7 @@ export class CheckoutComponent implements OnInit {
       // bug fix for states
       this.billingAddressStates = [];
     }
-    
+
   }
 
   onSubmit() {
@@ -209,10 +214,10 @@ export class CheckoutComponent implements OnInit {
 
     // set up purchase
     let purchase = new Purchase();
-    
+
     // populate purchase - customer
     purchase.customer = this.checkoutFormGroup.controls['customer'].value;
-    
+
     // populate purchase - shipping address
     purchase.shippingAddress = this.checkoutFormGroup.controls['shippingAddress'].value;
     const shippingState: State = JSON.parse(JSON.stringify(purchase.shippingAddress.state));
@@ -226,7 +231,7 @@ export class CheckoutComponent implements OnInit {
     const billingCountry: Country = JSON.parse(JSON.stringify(purchase.billingAddress.country));
     purchase.billingAddress.state = billingState.name;
     purchase.billingAddress.country = billingCountry.name;
-  
+
     // populate purchase - order and orderItems
     purchase.order = order;
     purchase.orderItems = orderItems;
@@ -253,7 +258,7 @@ export class CheckoutComponent implements OnInit {
     this.cartService.cartItems = [];
     this.cartService.totalPrice.next(0);
     this.cartService.totalQuantity.next(0);
-    
+
     // reset the form
     this.checkoutFormGroup.reset();
 
@@ -301,7 +306,7 @@ export class CheckoutComponent implements OnInit {
       data => {
 
         if (formGroupName === 'shippingAddress') {
-          this.shippingAddressStates = data; 
+          this.shippingAddressStates = data;
         }
         else {
           this.billingAddressStates = data;

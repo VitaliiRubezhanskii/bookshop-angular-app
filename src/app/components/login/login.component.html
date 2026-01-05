@@ -1,2 +1,11 @@
-<p class="alert alert-dark">You need to be logged in to view requested page.</p>
-<p>Please <a href="#" (click)="login($event)">log in</a> before continuing.</p>
+<div class="button-center-wrapper">
+  <button class="gsi-material-button" (click)="onGoogleSignIn()">
+    <div class="gsi-material-button-content-wrapper">
+      <div class="gsi-material-button-icon">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" width="20" height="20" />
+      </div>
+      <span class="gsi-material-button-contents">Sign in with Google</span>
+    </div>
+    <div class="gsi-material-button-state"></div>
+  </button>
+</div>
