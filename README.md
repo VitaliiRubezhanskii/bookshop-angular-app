@@ -104,6 +104,226 @@ This project was generated with [Angular CLI](https://github.com/angular/angular
 
 </details>
 
+<details>
+<summary><strong>RxJS Operators Guide (for Java Developers)</strong></summary>
+
+### RxJS to Java Comparison
+
+| RxJS | Java Equivalent |
+|------|-----------------|
+| `Observable<T>` | `Flux<T>` / `Observable<T>` (RxJava) |
+| `pipe()` | Method chaining |
+| `map()` | `map()` |
+| `filter()` | `filter()` |
+| `tap()` | `doOnNext()` / `peek()` |
+| `switchMap()` | `flatMap()` with cancellation |
+| `mergeMap()` | `flatMap()` |
+| `subscribe()` | `subscribe()` |
+
+---
+
+### switchMap - Cancel previous, keep latest only
+
+**Use case:** Search-as-you-type (cancel old search when user types more)
+
+```typescript
+searchTerm$.pipe(
+  debounceTime(300),
+  switchMap(term => this.http.get(`/api/search?q=${term}`))
+)
+```
+
+**Visual:**
+```
+User types "book" fast:
+
+Direct call (BAD):
+b → HTTP ────────────────→ response "b"    (arrives last, overwrites!)
+bo → HTTP ──────────→ response "bo"
+boo → HTTP ────→ response "boo"
+book → HTTP → response "book"              (gets overwritten by "b"!)
+
+With switchMap (GOOD):
+b → (cancelled)
+bo → (cancelled)
+boo → (cancelled)
+book → HTTP → response "book"              (only this one runs)
+```
+
+---
+
+### mergeMap (flatMap) - Run ALL in parallel
+
+**Use case:** Fetch details for multiple items at once
+
+```typescript
+from([1, 2, 3]).pipe(
+  mergeMap(id => this.http.get(`/api/products/${id}`))
+)
+```
+
+**Visual:**
+```
+from([1, 2, 3]) emits:
+
+1 → HTTP /products/1 ──────────→ Product 1
+2 → HTTP /products/2 ────→ Product 2
+3 → HTTP /products/3 ──────→ Product 3
+    ↑
+    All run in PARALLEL, order of results: whoever finishes first!
+```
+
+---
+
+### concatMap - Run ONE at a time, sequential
+
+**Use case:** Order-dependent operations (save parent, then children)
+
+```typescript
+from([item1, item2, item3]).pipe(
+  concatMap(item => this.http.post('/api/save', item))
+)
+```
+
+**Visual:**
+```
+item1 → HTTP POST ─────────→ done
+                              ↓ (wait for completion)
+                     item2 → HTTP POST ───→ done
+                                             ↓ (wait)
+                                    item3 → HTTP POST → done
+
+Sequential! One at a time. Order guaranteed.
+```
+
+---
+
+### Comparison: switchMap vs mergeMap vs concatMap
+
+```
+User clicks button 3 times quickly:
+
+switchMap:  click1 → (cancelled)
+            click2 → (cancelled)
+            click3 → HTTP → result
+            Only LAST one matters
+
+mergeMap:   click1 → HTTP ────→ result1
+            click2 → HTTP ──→ result2
+            click3 → HTTP ───→ result3
+            ALL run in parallel, ALL results
+
+concatMap:  click1 → HTTP ───→ result1
+                               click2 → HTTP ───→ result2
+                                                  click3 → HTTP → result3
+            One at a time, in ORDER
+```
+
+| Operator | Parallel? | Cancels? | Order? | Use For |
+|----------|-----------|----------|--------|---------|
+| `switchMap` | No | Yes | N/A | Search, autocomplete, route changes |
+| `mergeMap` | Yes | No | Random | Bulk fetch, parallel downloads |
+| `concatMap` | No | No | Preserved | Sequential saves, transactions |
+
+---
+
+### forkJoin - Wait for ALL to complete
+
+**Use case:** Load dashboard data (need users AND products AND stats)
+
+```typescript
+forkJoin({
+  products: this.http.get('/api/products'),
+  categories: this.http.get('/api/categories'),
+  user: this.http.get('/api/me')
+}).pipe(
+  map(({ products, categories, user }) => ({ ... }))
+)
+```
+
+**Visual:**
+```
+products   → HTTP ─────────────→ ┐
+categories → HTTP ───→           ├→ ALL done → emit combined result
+user       → HTTP ────────→      ┘
+                          ↑
+                   Waits for SLOWEST one
+```
+
+---
+
+### combineLatest - React to ANY change
+
+**Use case:** Multiple filters that affect the same data
+
+```typescript
+combineLatest([category$, priceRange$, sortBy$]).pipe(
+  switchMap(([category, price, sort]) =>
+    this.http.get('/api/products', { params: { category, price, sort }})
+  )
+)
+```
+
+**Visual:**
+```
+category$:   "books" ─────────────── "electronics" ────────
+priceRange$: "any" ───── "$10-50" ─────────────────────────
+sortBy$:     "name" ────────────────────────────────────────
+                ↓           ↓              ↓
+combineLatest emits whenever ANY source changes
+```
+
+---
+
+### exhaustMap - Ignore new until current completes
+
+**Use case:** Prevent double-submit on button click
+
+```typescript
+submitOrder$.pipe(
+  exhaustMap(() => this.http.post('/api/orders', order))
+)
+```
+
+**Visual:**
+```
+click1 → HTTP ─────────────────→ done
+click2 → (ignored, request in progress)
+click3 → (ignored)
+click4 → (ignored)
+                                  click5 → HTTP → done
+                                  ↑
+                           Only accepted after previous completes
+```
+
+---
+
+### Quick Reference
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     WHICH OPERATOR TO USE?                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  User typing/searching?          → switchMap (cancel stale)     │
+│                                                                  │
+│  Fetch multiple items parallel?  → mergeMap (all at once)       │
+│                                                                  │
+│  Save items in order?            → concatMap (one by one)       │
+│                                                                  │
+│  Load page data (wait for all)?  → forkJoin (parallel, wait)    │
+│                                                                  │
+│  Multiple filters/inputs?        → combineLatest (react to any) │
+│                                                                  │
+│  Prevent double-submit?          → exhaustMap (ignore spam)     │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**See full examples:** `src/app/examples/rxjs-examples.ts`
+
+</details>
+
 ## Development server
 
 Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
