@@ -298,6 +298,90 @@ click4 → (ignored)
 
 ---
 
+### Subjects - Hot Observables
+
+| Subject | Initial Value | Replay | Use When |
+|---------|---------------|--------|----------|
+| `Subject` | No | No | Event bus, simple pub/sub |
+| `BehaviorSubject` | Yes (required) | Last 1 | Current state (user, filters) |
+| `ReplaySubject(n)` | No | Last N | Cache events, chat history |
+| `AsyncSubject` | No | Last 1 | Only care about final result |
+
+```typescript
+// BehaviorSubject - most common for state
+const currentUser$ = new BehaviorSubject<User>(null);
+currentUser$.next(user);                    // Update
+currentUser$.getValue();                    // Get current sync
+currentUser$.subscribe(u => ...);           // React to changes
+```
+
+---
+
+### takeUntil - Prevent Memory Leaks (IMPORTANT!)
+
+```typescript
+// THE Angular unsubscribe pattern
+export class MyComponent implements OnDestroy {
+  private destroy$ = new Subject<void>();
+
+  ngOnInit() {
+    this.someObservable$.pipe(
+      takeUntil(this.destroy$)    // Auto-unsubscribe!
+    ).subscribe();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+}
+```
+
+---
+
+### shareReplay - Cache HTTP Responses
+
+```typescript
+// WITHOUT shareReplay: 2 subscribers = 2 HTTP requests
+// WITH shareReplay: 2 subscribers = 1 HTTP request (cached)
+
+products$ = this.http.get('/api/products').pipe(
+  shareReplay(1)  // Cache last emission
+);
+```
+
+---
+
+### debounceTime vs throttleTime
+
+```
+User types "book" rapidly:
+
+debounceTime(300):  b → bo → boo → book → [wait 300ms] → emit "book"
+                    Good for: search input, form validation
+
+throttleTime(300):  b → [emit "b"] → [ignore for 300ms] → o → [emit "o"]
+                    Good for: scroll events, resize, button spam
+```
+
+---
+
+### scan - Running State (Redux-like)
+
+```typescript
+actions$.pipe(
+  scan((state, action) => {
+    switch(action.type) {
+      case 'ADD': return [...state, action.item];
+      case 'REMOVE': return state.filter(i => i !== action.item);
+    }
+  }, [])
+).subscribe(state => console.log('Cart:', state));
+// Output: ['Book'], ['Book','Pen'], ['Pen']
+```
+
+---
+
 ### Quick Reference
 
 ```
@@ -305,22 +389,24 @@ click4 → (ignored)
 │                     WHICH OPERATOR TO USE?                       │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  User typing/searching?          → switchMap (cancel stale)     │
-│                                                                  │
-│  Fetch multiple items parallel?  → mergeMap (all at once)       │
-│                                                                  │
-│  Save items in order?            → concatMap (one by one)       │
-│                                                                  │
-│  Load page data (wait for all)?  → forkJoin (parallel, wait)    │
-│                                                                  │
-│  Multiple filters/inputs?        → combineLatest (react to any) │
-│                                                                  │
-│  Prevent double-submit?          → exhaustMap (ignore spam)     │
+│  User typing/searching?          → switchMap + debounceTime     │
+│  Fetch multiple in parallel?     → mergeMap or forkJoin         │
+│  Save items sequentially?        → concatMap                    │
+│  Prevent double-click?           → exhaustMap                   │
+│  Multiple reactive filters?      → combineLatest                │
+│  Add context to event?           → withLatestFrom               │
+│  Cache HTTP response?            → shareReplay(1)               │
+│  Current state value?            → BehaviorSubject              │
+│  Prevent memory leaks?           → takeUntil(destroy$)          │
+│  Rate limit events?              → throttleTime                 │
+│  Wait for input pause?           → debounceTime                 │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 **See full examples:** `src/app/examples/rxjs-examples.ts`
+
+**Try interactive playground:** `http://localhost:4200/rxjs-playground`
 
 </details>
 
