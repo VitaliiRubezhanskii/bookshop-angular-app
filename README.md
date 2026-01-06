@@ -408,6 +408,93 @@ actions$.pipe(
 
 **Try interactive playground:** `http://localhost:4200/rxjs-playground`
 
+---
+
+### Readiness Self-Check
+
+Test your RxJS knowledge - can you predict the output?
+
+<details>
+<summary><strong>Quiz 1: What does this output?</strong></summary>
+
+```typescript
+of(1, 2, 3).pipe(
+  map(x => x * 10),
+  toArray()
+).subscribe(result => console.log(result));
+```
+
+**Answer:** `[10, 20, 30]`
+
+</details>
+
+<details>
+<summary><strong>Quiz 2: switchMap vs mergeMap - what's the difference?</strong></summary>
+
+```typescript
+// User clicks 3 times quickly
+clicks$.pipe(switchMap(() => http.get('/api'))).subscribe();
+clicks$.pipe(mergeMap(() => http.get('/api'))).subscribe();
+```
+
+**Answer:**
+- `switchMap`: Only 1 request (cancels previous) - last click wins
+- `mergeMap`: 3 requests in parallel - all clicks processed
+
+</details>
+
+<details>
+<summary><strong>Quiz 3: Why use BehaviorSubject over Subject?</strong></summary>
+
+**Answer:** `BehaviorSubject` has an initial value and new subscribers immediately receive the current value. Use it for state (current user, current filters).
+
+```typescript
+const user$ = new BehaviorSubject<User>(null);
+user$.subscribe(u => ...); // Immediately gets null
+user$.next(loggedInUser);  // All subscribers get loggedInUser
+```
+
+</details>
+
+<details>
+<summary><strong>Quiz 4: What's wrong with this code?</strong></summary>
+
+```typescript
+export class MyComponent {
+  ngOnInit() {
+    interval(1000).subscribe(x => console.log(x));
+  }
+}
+```
+
+**Answer:** Memory leak! The subscription never unsubscribes. Fix with `takeUntil`:
+
+```typescript
+private destroy$ = new Subject<void>();
+
+ngOnInit() {
+  interval(1000).pipe(takeUntil(this.destroy$)).subscribe();
+}
+
+ngOnDestroy() {
+  this.destroy$.next();
+  this.destroy$.complete();
+}
+```
+
+</details>
+
+<details>
+<summary><strong>Quiz 5: forkJoin vs combineLatest?</strong></summary>
+
+**Answer:**
+- `forkJoin`: Emits ONCE when ALL complete (like Promise.all)
+- `combineLatest`: Emits EVERY TIME any source emits
+
+Use `forkJoin` for one-time data loading, `combineLatest` for reactive filters.
+
+</details>
+
 </details>
 
 ## Development server

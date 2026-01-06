@@ -5,7 +5,7 @@ import { map, tap, switchMap, mergeMap, concatMap, delay, toArray, debounceTime 
 /**
  * RxJS Operators Unit Tests
  *
- * Run with: ng test --include=**/rxjs-examples.spec.ts
+ * Run with: ng test --include="**\/rxjs-examples.spec.ts"
  */
 describe('RxJS Operators', () => {
 
