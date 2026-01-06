@@ -497,6 +497,301 @@ Use `forkJoin` for one-time data loading, `combineLatest` for reactive filters.
 
 </details>
 
+<details>
+<summary><strong>NgRx State Management Guide (for Java Developers)</strong></summary>
+
+### NgRx vs Java/Backend Patterns
+
+| NgRx Concept | Java Equivalent | Purpose |
+|--------------|-----------------|---------|
+| **Store** | Database / Application State | Single source of truth |
+| **Action** | Domain Event / Command | Describes what happened |
+| **Reducer** | Event Handler | Updates state (pure function) |
+| **Selector** | Repository Query / DTO | Reads/derives state |
+| **Effect** | Application Service | Side effects (API calls) |
+
+### Data Flow (Unidirectional)
+
+```
+Component ──dispatch──► Action ──► Reducer ──► Store ──► Selector ──► Component
+                           │
+                           └──► Effect ──► API ──► Action
+```
+
+---
+
+### Actions - Describing What Happened
+
+```typescript
+// Naming: [Source] Event Description
+export const loadProducts = createAction('[Products Page] Load Products');
+
+export const loadProductsSuccess = createAction(
+  '[Products API] Load Products Success',
+  props<{ products: Product[] }>()
+);
+
+export const loadProductsFailure = createAction(
+  '[Products API] Load Products Failure',
+  props<{ error: string }>()
+);
+```
+
+---
+
+### Reducers - Pure State Updates
+
+```typescript
+export const productsReducer = createReducer(
+  initialState,
+
+  on(loadProducts, (state) => ({
+    ...state,           // Always spread - never mutate!
+    loading: true
+  })),
+
+  on(loadProductsSuccess, (state, { products }) => ({
+    ...state,
+    products,
+    loading: false
+  })),
+
+  on(loadProductsFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  }))
+);
+```
+
+---
+
+### Selectors - Efficient State Queries
+
+```typescript
+// Feature selector
+export const selectProductsState = createFeatureSelector<ProductsState>('products');
+
+// Simple selectors
+export const selectAllProducts = createSelector(
+  selectProductsState,
+  (state) => state.products
+);
+
+// Composed/derived selectors (memoized!)
+export const selectCartTotal = createSelector(
+  selectCartSubtotal,
+  selectCartTax,
+  (subtotal, tax) => subtotal + tax
+);
+
+// Parameterized selector
+export const selectProductById = (id: number) => createSelector(
+  selectAllProducts,
+  (products) => products.find(p => p.id === id)
+);
+```
+
+---
+
+### Effects - Side Effects (API Calls)
+
+```typescript
+@Injectable()
+export class ProductsEffects {
+
+  loadProducts$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(loadProducts),                    // Listen for action
+      switchMap(() =>                          // Cancel previous
+        this.http.get<Product[]>('/api/products').pipe(
+          map(products => loadProductsSuccess({ products })),
+          catchError(err => of(loadProductsFailure({ error: err.message })))
+        )
+      )
+    )
+  );
+
+  // Effect without dispatch (side effect only)
+  logError$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(loadProductsFailure),
+      tap(({ error }) => console.error('Failed:', error))
+    ),
+    { dispatch: false }
+  );
+}
+```
+
+---
+
+### Using in Components
+
+```typescript
+@Component({...})
+export class ProductListComponent {
+  // Select state (returns Observable)
+  products$ = this.store.select(selectAllProducts);
+  loading$ = this.store.select(selectProductsLoading);
+
+  constructor(private store: Store) {}
+
+  ngOnInit() {
+    this.store.dispatch(loadProducts());  // Dispatch action
+  }
+
+  addToCart(product: Product) {
+    this.store.dispatch(addToCart({ product, quantity: 1 }));
+  }
+}
+```
+
+```html
+<!-- Template with async pipe -->
+<div *ngIf="loading$ | async">Loading...</div>
+
+<div *ngFor="let product of products$ | async">
+  {{ product.name }}
+  <button (click)="addToCart(product)">Add</button>
+</div>
+```
+
+---
+
+### Effect Operator Guide
+
+| Scenario | Operator | Why |
+|----------|----------|-----|
+| Search/Navigation | `switchMap` | Cancel previous request |
+| Bulk operations | `mergeMap` | Run all in parallel |
+| Sequential saves | `concatMap` | Maintain order |
+| Form submit | `exhaustMap` | Ignore while processing |
+
+---
+
+### When to Use NgRx vs Simpler Options
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     USE NGRX WHEN:                              │
+├─────────────────────────────────────────────────────────────────┤
+│  ✓ Shared state between many unrelated components              │
+│  ✓ Complex state with many user interactions                   │
+│  ✓ Need undo/redo or time-travel debugging                     │
+│  ✓ Team needs enforced patterns                                │
+│  ✓ State needs to survive route changes                        │
+├─────────────────────────────────────────────────────────────────┤
+│                     USE SIMPLER OPTIONS:                        │
+├─────────────────────────────────────────────────────────────────┤
+│  • Simple services with BehaviorSubject                        │
+│  • Component-local state → ComponentStore                       │
+│  • Server cache → TanStack Query or simple HTTP cache          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Quick Setup
+
+```bash
+# Install NgRx packages
+ng add @ngrx/store
+ng add @ngrx/effects
+ng add @ngrx/store-devtools
+ng add @ngrx/entity        # Optional: for collections
+ng add @ngrx/component-store  # Optional: for local state
+```
+
+```typescript
+// app.config.ts or app.module.ts
+import { provideStore } from '@ngrx/store';
+import { provideEffects } from '@ngrx/effects';
+
+export const appConfig = {
+  providers: [
+    provideStore({ products: productsReducer, cart: cartReducer }),
+    provideEffects([ProductsEffects, CartEffects])
+  ]
+};
+```
+
+---
+
+### Readiness Self-Check
+
+<details>
+<summary><strong>Quiz 1: What's the difference between Action and Effect?</strong></summary>
+
+**Answer:**
+- **Action**: A plain object describing WHAT happened (event)
+- **Effect**: A service that REACTS to actions and performs side effects (API calls)
+
+Actions are dispatched → Effects listen → Effects dispatch new actions
+
+</details>
+
+<details>
+<summary><strong>Quiz 2: Why must reducers be pure functions?</strong></summary>
+
+**Answer:**
+- Predictable state changes (same input = same output)
+- Enable time-travel debugging
+- Easy to test
+- No side effects = no unexpected behavior
+
+```typescript
+// WRONG - mutates state
+on(action, (state) => { state.items.push(item); return state; })
+
+// CORRECT - returns new state
+on(action, (state) => ({ ...state, items: [...state.items, item] }))
+```
+
+</details>
+
+<details>
+<summary><strong>Quiz 3: When to use switchMap vs exhaustMap in effects?</strong></summary>
+
+**Answer:**
+- **switchMap**: User can trigger multiple times, only latest matters (search, navigation)
+- **exhaustMap**: Ignore new triggers until current completes (form submit, payment)
+
+```typescript
+// Search - cancel old, use latest
+switchMap(() => this.http.get('/search'))
+
+// Submit - ignore clicks while processing
+exhaustMap(() => this.http.post('/order'))
+```
+
+</details>
+
+<details>
+<summary><strong>Quiz 4: Why use selectors instead of accessing store directly?</strong></summary>
+
+**Answer:**
+- **Memoization**: Only recalculates when inputs change
+- **Composition**: Build complex queries from simple ones
+- **Decoupling**: Components don't know state shape
+- **Testing**: Pure functions are easy to test
+
+</details>
+
+<details>
+<summary><strong>Quiz 5: Store vs BehaviorSubject - when to use which?</strong></summary>
+
+**Answer:**
+- **BehaviorSubject**: Simple shared state, few components, no complex interactions
+- **NgRx Store**: Many components, complex state logic, need debugging tools, team patterns
+
+Rule of thumb: Start simple, add NgRx when complexity grows.
+
+</details>
+
+**See full examples:** `src/app/examples/ngrx-examples.ts`
+
+</details>
+
 ## Development server
 
 Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
