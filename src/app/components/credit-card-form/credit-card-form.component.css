@@ -1,0 +1,184 @@
+/* Main Container */
+.credit-card-form {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+/* Title */
+.form-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.card-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: #3b82f6;
+}
+
+/* Form Grid */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Form Elements */
+.form-group {
+  position: relative;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background-color: white;
+  font-size: 0.9375rem;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.3);
+}
+
+.form-input::placeholder {
+  color: #94a3b8;
+  opacity: 0.7;
+}
+
+/* Select Elements */
+.select-wrapper {
+  position: relative;
+}
+
+.form-select {
+  appearance: none;
+  width: 100%;
+  padding: 0.75rem 2.5rem 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background-color: white;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.3);
+}
+
+.select-arrow {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  color: #64748b;
+  pointer-events: none;
+}
+
+/* Card Number Input */
+.card-number-input {
+  position: relative;
+}
+
+.card-icons {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 0.5rem;
+}
+
+.card-brand {
+  height: 1.25rem;
+  width: auto;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.card-number-input:focus-within .card-brand {
+  opacity: 1;
+}
+
+/* Security Code */
+.security-code-wrapper {
+  position: relative;
+}
+
+.security-code-help {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  color: #94a3b8;
+  cursor: help;
+}
+
+.security-code-help:hover {
+  color: #64748b;
+}
+
+/* Card Type Specific Styling */
+.form-select[formControlName="cardType"]:valid {
+  background-image: none;
+}
+
+.form-select[formControlName="cardType"]:valid + .select-arrow {
+  display: none;
+}
+
+/* Focus States */
+.form-input:focus, .form-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 767px) {
+  .credit-card-form {
+    padding: 1.5rem;
+  }
+
+  .form-title {
+    font-size: 1.25rem;
+  }
+
+  .card-icons {
+    display: none;
+  }
+}

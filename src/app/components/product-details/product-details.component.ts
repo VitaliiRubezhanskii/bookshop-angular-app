@@ -4,11 +4,14 @@ import { ProductService } from 'src/app/services/product.service';
 import { ActivatedRoute } from '@angular/router';
 import { CartService } from 'src/app/services/cart.service';
 import { CartItem } from 'src/app/common/cart-item';
+import {CommonModule} from "@angular/common";
 
 @Component({
   selector: 'app-product-details',
   templateUrl: './product-details.component.html',
-  styleUrls: ['./product-details.component.css']
+  styleUrls: ['./product-details.component.css'],
+  imports: [CommonModule],
+  standalone: true
 })
 export class ProductDetailsComponent implements OnInit {
 
@@ -19,21 +22,12 @@ export class ProductDetailsComponent implements OnInit {
               private route: ActivatedRoute) { }
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(() => {
-      this.handleProductDetails();
-    })
+    this.route.paramMap.subscribe(() => this.handleProductDetails())
   }
 
   handleProductDetails() {
-
-    // get the "id" param string. convert string to a number using the "+" symbol
     const theProductId: string = this.route.snapshot.paramMap.get('id');
-
-    this.productService.getProduct(theProductId).subscribe(
-      data => {
-        this.product = data;
-      }
-    )
+    this.productService.getProduct(theProductId).subscribe(data => this.product = data)
   }
 
   addToCart() {
@@ -41,7 +35,12 @@ export class ProductDetailsComponent implements OnInit {
     console.log(`Adding to cart: ${this.product.name}, ${this.product.unitPrice}`);
     const theCartItem = new CartItem(this.product);
     this.cartService.addToCart(theCartItem);
-    
+
+  }
+
+  goBack() {
+    // Use Angular Router to navigate back
+    window.history.back();
   }
 
 }

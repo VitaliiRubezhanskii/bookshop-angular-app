@@ -1,54 +1,23 @@
-import { Component, Inject, OnInit } from '@angular/core';
-import { OktaAuth } from '@okta/okta-auth-js';
-import { OKTA_AUTH } from '@okta/okta-angular';
-import { OktaSignIn } from '@okta/okta-signin-widget';
-import { ChangeDetectorRef } from '@angular/core';
-
+import {Component, inject} from '@angular/core';
+import {Router} from '@angular/router';
+import {AuthService} from "../../auth.service";
 
 @Component({
-  selector: 'app-login',
+  selector: 'app-user-login',
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.css']
+  styleUrls: ['login.component.css'],
+  standalone: true
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent {
+  authService: AuthService = inject(AuthService);
+  router: Router = inject(Router);
 
-  oktaSignin: any;
-  user;
-  oktaSignIn: OktaSignIn;
-
-  constructor(@Inject(OKTA_AUTH) private oktaAuth: OktaAuth, private changeDetectorRef: ChangeDetectorRef) { 
-
-    this.oktaSignin = new OktaSignIn({
-      baseUrl: 'https://dev-06911339.okta.com',
-      clientId: '0oa9qiqtd3dKHCRNa5d7',
-      redirectUri: 'https://localhost:4200'
-    });
-
-  }
-
-  async ngOnInit() {
+  async onGoogleSignIn(): Promise<void> {
     try {
-      this.user = await this.oktaSignIn.authClient.token.getUserInfo();
+      await this.authService.googleLogin();
+      await this.router.navigateByUrl('/products');
     } catch (error) {
-      this.showLogin();
+      console.error('Google Sign-In error:', error);
     }
   }
- 
-  showLogin(): void {
-    this.oktaSignIn.renderEl({el: '#okta-login-container'}, (response) => {
-      if (response.status === 'SUCCESS') {
-        // this.user = response.tokens.idToken.claims.email;
-        // this.oktaSignIn.remove();
-        // this.changeDetectorRef.detectChanges();
-      }
-    });
-  }
-
-  logout(): void {
-    // this.oktaSignIn.authClient.signOut(() => {
-    //   this.user = undefined;
-    //   this.showLogin();
-    // });
-  }
-
 }

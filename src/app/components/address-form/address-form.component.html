@@ -1,0 +1,56 @@
+<div [formGroup]="formGroup" class="address-form">
+  <h3 class="form-title">
+    <svg class="location-icon" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+    </svg>
+    {{ title }}
+  </h3>
+
+  <div class="form-grid">
+    <!-- Country -->
+    <div class="form-group">
+      <label class="form-label">Country</label>
+      <div class="select-wrapper">
+        <select formControlName="country" (change)="countryChanged.emit()" class="form-select">
+          <option value="">Select country</option>
+          <option *ngFor="let country of countries" [ngValue]="country">{{ country.name }}</option>
+        </select>
+        <svg class="select-arrow" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Street -->
+    <div class="form-group">
+      <label class="form-label">Street Address</label>
+      <input type="text" formControlName="street" class="form-input" placeholder="123 Main St">
+    </div>
+
+    <!-- City -->
+    <div class="form-group">
+      <label class="form-label">City</label>
+      <input type="text" formControlName="city" class="form-input" placeholder="New York">
+    </div>
+
+    <!-- State -->
+    <div class="form-group">
+      <label class="form-label">State/Province</label>
+      <div class="select-wrapper">
+        <select formControlName="state" class="form-select">
+          <option value="">Select state</option>
+          <option *ngFor="let state of states" [ngValue]="state">{{ state.name }}</option>
+        </select>
+        <svg class="select-arrow" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Zip Code -->
+    <div class="form-group">
+      <label class="form-label">Zip/Postal Code</label>
+      <input type="text" formControlName="zipCode" class="form-input" placeholder="10001">
+    </div>
+  </div>
+</div>

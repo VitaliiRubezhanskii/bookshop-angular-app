@@ -1,0 +1,69 @@
+{
+  "products":[
+  {
+    "id": "1",
+    "sku": "BOOK-TECH-1008",
+    "name": "Introduction to Spring Boot",
+    "description": "Learn Spring",
+    "imageUrl": "assets/images/products/books/book-luv2code-1008.png",
+    "active": true,
+    "unitsInStock": 100,
+    "unitPrice": 29.99,
+    "categoryId": 1,
+    "dateCreated": "2024-01-01T00:00:00Z",
+    "lastUpdate": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "2",
+    "sku": "BOOK-TECH-1000",
+    "name": "Crash Course in Python",
+    "description": "Learn Python",
+    "imageUrl": "assets/images/products/books/book-luv2code-1000.png",
+    "active": true,
+    "unitsInStock": 100,
+    "unitPrice": 19.99,
+    "categoryId": 1,
+    "dateCreated": "2024-01-01T00:00:00Z",
+    "lastUpdate": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "3",
+    "sku": "BOOK-TECH-1002",
+    "name": "Exploring Vue.js",
+    "description": "Learn Vue.js",
+    "imageUrl": "assets/images/products/books/book-luv2code-1002.png",
+    "active": true,
+    "unitsInStock": 100,
+    "unitPrice": 24.99,
+    "categoryId": 1,
+    "dateCreated": "2024-01-01T00:00:00Z",
+    "lastUpdate": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "4",
+    "sku": "BOOK-TECH-1003",
+    "name": "Advanced Technics in Big Data",
+    "description": "Learn Big Data",
+    "imageUrl": "assets/images/products/books/book-luv2code-1003.png",
+    "active": true,
+    "unitsInStock": 100,
+    "unitPrice": 29.99,
+    "categoryId": 1
+  },
+  {
+    "id": "5",
+    "sku": "BOOK-TECH-1010",
+    "name": "Beginners Guide to Data Science",
+    "description": "Learn Data Science",
+    "imageUrl": "assets/images/products/books/book-luv2code-1010.png",
+    "active": true,
+    "unitsInStock": 100,
+    "unitPrice": 24.99,
+    "categoryId": 1
+  }
+],
+  "size": 5,
+  "totalElements": 5,
+  "totalPages": 1,
+  "number": 1
+}

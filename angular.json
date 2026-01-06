@@ -21,7 +21,8 @@
             "index": "src/index.html",
             "main": "src/main.ts",
             "polyfills": [
-              "zone.js"
+              "zone.js",
+              "@angular/localize/init"
             ],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
@@ -65,18 +66,21 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "bookshop-angular-app:build:production"
+              "buildTarget": "bookshop-angular-app:build:production"
             },
             "development": {
-              "browserTarget": "bookshop-angular-app:build:development"
+              "buildTarget": "bookshop-angular-app:build:development"
             }
+          },
+          "options": {
+            "proxyConfig": "proxy.conf.json"
           },
           "defaultConfiguration": "development"
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "bookshop-angular-app:build"
+            "buildTarget": "bookshop-angular-app:build"
           }
         },
         "test": {
@@ -84,7 +88,8 @@
           "options": {
             "polyfills": [
               "zone.js",
-              "zone.js/testing"
+              "zone.js/testing",
+              "@angular/localize/init"
             ],
             "tsConfig": "tsconfig.spec.json",
             "inlineStyleLanguage": "scss",

@@ -1,3 +1,8 @@
-<p *ngFor="let tempProduct of products">
-    {{ tempProduct.name}}: {{ tempProduct.unitPrice | currency:'USD'}}
-</p>
+<div class="book-grid">
+  <div class="book-card" *ngFor="let tempProduct of products">
+    <img [src]="tempProduct.imageUrl" alt="{{ tempProduct.name }}" class="book-image" />
+    <h3 class="book-title">{{ tempProduct.name }}</h3>
+    <p class="book-price">${{ tempProduct.unitPrice }}</p>
+    <button class="add-button" (click)="addToCart(tempProduct)">Add to Cart</button>
+  </div>
+</div>

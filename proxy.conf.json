@@ -1,0 +1,10 @@
+{
+  "/.well-known": {
+    "target": "https://securetoken.google.com",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^.well-known": ""
+    }
+  }
+}
