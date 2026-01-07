@@ -498,221 +498,1163 @@ Use `forkJoin` for one-time data loading, `combineLatest` for reactive filters.
 </details>
 
 <details>
-<summary><strong>NgRx State Management Guide (for Java Developers)</strong></summary>
+<summary><strong>NgRx State Management Guide (Complete Core Concepts)</strong></summary>
+
+## 📚 Table of Contents
+
+1. [What is NgRx?](#what-is-ngrx)
+2. [Core Concepts Overview](#core-concepts-overview)
+3. [Actions](#1-actions---events-that-describe-what-happened)
+4. [Reducers](#2-reducers---pure-state-transitions)
+5. [Store](#3-store---single-source-of-truth)
+6. [Selectors](#4-selectors---querying-state-efficiently)
+7. [Effects](#5-effects---handling-side-effects)
+8. [Entity Adapter](#6-entity-adapter---managing-collections)
+9. [Component Store](#7-component-store---local-state-management)
+10. [Best Practices](#best-practices)
+11. [Testing](#testing-ngrx)
+12. [Playgrounds](#try-it-yourself)
+
+---
+
+## What is NgRx?
+
+NgRx is a **reactive state management library** for Angular, inspired by Redux. It provides:
+
+- **Predictable state** - State changes only through actions
+- **Immutability** - Never mutate state, always create new objects
+- **Single source of truth** - One store for all application state
+- **DevTools** - Time-travel debugging, state inspection
 
 ### NgRx vs Java/Backend Patterns
 
 | NgRx Concept | Java Equivalent | Purpose |
 |--------------|-----------------|---------|
-| **Store** | Database / Application State | Single source of truth |
-| **Action** | Domain Event / Command | Describes what happened |
-| **Reducer** | Event Handler | Updates state (pure function) |
-| **Selector** | Repository Query / DTO | Reads/derives state |
-| **Effect** | Application Service | Side effects (API calls) |
+| **Store** | Database / Application Context | Single source of truth |
+| **Action** | Domain Event / Command (CQRS) | Describes what happened |
+| **Reducer** | Event Sourcing Handler | Updates state (pure function) |
+| **Selector** | Repository Query / DTO Mapper | Reads/derives state |
+| **Effect** | Application Service / @Async | Side effects (API calls) |
+| **Entity Adapter** | JPA Repository | CRUD for collections |
 
-### Data Flow (Unidirectional)
+---
+
+## Core Concepts Overview
 
 ```
-Component ──dispatch──► Action ──► Reducer ──► Store ──► Selector ──► Component
-                           │
-                           └──► Effect ──► API ──► Action
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           NgRx ARCHITECTURE                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+     ┌──────────────────────────────────────────────────────────────────┐
+     │                         COMPONENT                                 │
+     │  ┌─────────────────┐                    ┌─────────────────────┐  │
+     │  │ store.dispatch( │                    │ store.select(       │  │
+     │  │   action()      │                    │   selector)         │  │
+     │  │ )               │                    │ | async             │  │
+     │  └────────┬────────┘                    └──────────▲──────────┘  │
+     └───────────┼───────────────────────────────────────┼─────────────┘
+                 │                                        │
+                 ▼                                        │
+     ┌───────────────────────┐                           │
+     │       ACTIONS         │                           │
+     │  { type: '[Cart]...'  │                           │
+     │    payload: {...} }   │                           │
+     └───────────┬───────────┘                           │
+                 │                                        │
+        ┌────────┴────────┐                              │
+        │                 │                              │
+        ▼                 ▼                              │
+┌───────────────┐  ┌─────────────────┐         ┌────────┴────────┐
+│   REDUCERS    │  │     EFFECTS     │         │   SELECTORS     │
+│ (pure funcs)  │  │ (side effects)  │         │  (memoized)     │
+│               │  │                 │         │                 │
+│ state + action│  │ action → API →  │         │ state → slice   │
+│ = new state   │  │ new action      │         │ → derived data  │
+└───────┬───────┘  └────────┬────────┘         └────────▲────────┘
+        │                   │                           │
+        │                   │ dispatch                  │
+        ▼                   ▼                           │
+     ┌──────────────────────────────────────────────────┴──┐
+     │                       STORE                          │
+     │  ┌─────────────────────────────────────────────────┐│
+     │  │  {                                              ││
+     │  │    products: { items: [], loading: false },     ││
+     │  │    cart: { items: [], total: 0 },               ││
+     │  │    user: { current: null, authenticated: false }││
+     │  │  }                                              ││
+     │  └─────────────────────────────────────────────────┘│
+     └─────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Actions - Describing What Happened
+## 1. ACTIONS - Events That Describe What Happened
+
+Actions are **plain objects** that describe unique events in your application. Think of them as "news headlines" - they tell you WHAT happened, not HOW to handle it.
+
+### Action Anatomy
 
 ```typescript
-// Naming: [Source] Event Description
-export const loadProducts = createAction('[Products Page] Load Products');
+interface Action {
+  type: string;      // Unique identifier, e.g., '[Cart] Add Item'
+  payload?: any;     // Optional data
+}
+```
 
+### Creating Actions
+
+```typescript
+import { createAction, props } from '@ngrx/store';
+
+// Simple action (no payload)
+export const loadProducts = createAction(
+  '[Products Page] Load Products'
+);
+
+// Action with payload
+export const addToCart = createAction(
+  '[Product Card] Add To Cart',
+  props<{ productId: number; quantity: number }>()
+);
+
+// Action with typed payload object
 export const loadProductsSuccess = createAction(
-  '[Products API] Load Products Success',
+  '[Products API] Load Success',
   props<{ products: Product[] }>()
 );
 
 export const loadProductsFailure = createAction(
-  '[Products API] Load Products Failure',
+  '[Products API] Load Failure',
   props<{ error: string }>()
 );
 ```
 
----
+### Action Naming Convention
 
-### Reducers - Pure State Updates
+```
+[Source] Event Description
+
+Source: Where the action originated
+- [Products Page]     - User interaction on page
+- [Products API]      - API response
+- [Cart Effects]      - Side effect
+- [Router]            - Navigation
+- [App Init]          - Application startup
+
+Examples:
+- [Products Page] Load Products       ← User clicked "Load"
+- [Products API] Load Success         ← API responded
+- [Cart Page] Remove Item             ← User removed item
+- [Auth Guard] Login Redirect         ← Guard triggered
+```
+
+### Good vs Bad Action Design
 
 ```typescript
-export const productsReducer = createReducer(
-  initialState,
+// ❌ BAD - Too generic
+createAction('LOAD');
+createAction('UPDATE');
 
-  on(loadProducts, (state) => ({
-    ...state,           // Always spread - never mutate!
-    loading: true
-  })),
+// ❌ BAD - Contains implementation details
+createAction('SET_PRODUCTS_ARRAY');
+createAction('PUSH_TO_CART');
 
-  on(loadProductsSuccess, (state, { products }) => ({
-    ...state,
-    products,
-    loading: false
-  })),
-
-  on(loadProductsFailure, (state, { error }) => ({
-    ...state,
-    loading: false,
-    error
-  }))
-);
+// ✅ GOOD - Descriptive, sourced, event-based
+createAction('[Products Page] Load Products');
+createAction('[Cart API] Update Quantity Success');
 ```
 
 ---
 
-### Selectors - Efficient State Queries
+## 2. REDUCERS - Pure State Transitions
+
+Reducers are **pure functions** that take the current state and an action, and return a new state. They are the ONLY place where state changes.
+
+### Reducer Rules (IMPORTANT!)
+
+1. **Pure function** - Same input = Same output
+2. **No side effects** - No API calls, no console.log, no random
+3. **Immutable** - Never modify state, always return NEW objects
+4. **Synchronous** - No async, no promises
+
+### Basic Reducer
 
 ```typescript
-// Feature selector
-export const selectProductsState = createFeatureSelector<ProductsState>('products');
+import { createReducer, on } from '@ngrx/store';
+import * as ProductActions from './products.actions';
 
-// Simple selectors
+// 1. Define state interface
+export interface ProductsState {
+  products: Product[];
+  selectedProductId: number | null;
+  loading: boolean;
+  error: string | null;
+}
+
+// 2. Define initial state
+export const initialState: ProductsState = {
+  products: [],
+  selectedProductId: null,
+  loading: false,
+  error: null,
+};
+
+// 3. Create reducer with action handlers
+export const productsReducer = createReducer(
+  initialState,
+
+  // Loading state
+  on(ProductActions.loadProducts, (state) => ({
+    ...state,              // Spread existing state
+    loading: true,         // Update specific property
+    error: null,
+  })),
+
+  // Success - update products
+  on(ProductActions.loadProductsSuccess, (state, { products }) => ({
+    ...state,
+    products,              // ES6 shorthand for products: products
+    loading: false,
+  })),
+
+  // Failure - set error
+  on(ProductActions.loadProductsFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error,
+  })),
+
+  // Select product
+  on(ProductActions.selectProduct, (state, { productId }) => ({
+    ...state,
+    selectedProductId: productId,
+  }))
+);
+```
+
+### Immutability Patterns
+
+```typescript
+// ❌ WRONG - Mutating state
+on(addItem, (state, { item }) => {
+  state.items.push(item);  // MUTATION!
+  return state;
+});
+
+// ✅ CORRECT - New array
+on(addItem, (state, { item }) => ({
+  ...state,
+  items: [...state.items, item]  // New array with item
+}));
+
+// ✅ Update item in array
+on(updateItem, (state, { id, changes }) => ({
+  ...state,
+  items: state.items.map(item =>
+    item.id === id ? { ...item, ...changes } : item
+  )
+}));
+
+// ✅ Remove item from array
+on(removeItem, (state, { id }) => ({
+  ...state,
+  items: state.items.filter(item => item.id !== id)
+}));
+
+// ✅ Update nested object
+on(updateUserAddress, (state, { address }) => ({
+  ...state,
+  user: {
+    ...state.user,
+    address: {
+      ...state.user.address,
+      ...address
+    }
+  }
+}));
+```
+
+---
+
+## 3. STORE - Single Source of Truth
+
+The Store is a **single, immutable state tree** containing all application state. Components read from the Store via selectors and update it via actions.
+
+### Store Setup (Angular 17+ Standalone)
+
+```typescript
+// app.config.ts
+import { ApplicationConfig, isDevMode } from '@angular/core';
+import { provideStore } from '@ngrx/store';
+import { provideEffects } from '@ngrx/effects';
+import { provideStoreDevtools } from '@ngrx/store-devtools';
+
+import { productsReducer } from './store/products/products.reducer';
+import { cartReducer } from './store/cart/cart.reducer';
+import { ProductsEffects } from './store/products/products.effects';
+import { CartEffects } from './store/cart/cart.effects';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    // Register root reducers
+    provideStore({
+      products: productsReducer,
+      cart: cartReducer,
+    }),
+
+    // Register effects
+    provideEffects([ProductsEffects, CartEffects]),
+
+    // DevTools (development only)
+    provideStoreDevtools({
+      maxAge: 25,                // Keep last 25 states
+      logOnly: !isDevMode(),    // Log only in production
+      autoPause: true,          // Pause when DevTools closed
+    }),
+  ],
+};
+```
+
+### Feature State (Lazy Loaded Modules)
+
+```typescript
+// products.routes.ts (lazy loaded)
+import { provideState, provideEffects } from '@ngrx/store';
+
+export const PRODUCTS_ROUTES: Routes = [
+  {
+    path: '',
+    component: ProductsComponent,
+    providers: [
+      provideState('products', productsReducer),
+      provideEffects([ProductsEffects]),
+    ],
+  },
+];
+```
+
+### Using Store in Components
+
+```typescript
+import { Component, inject } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { AsyncPipe, NgFor, NgIf } from '@angular/common';
+
+@Component({
+  selector: 'app-products',
+  standalone: true,
+  imports: [AsyncPipe, NgFor, NgIf],
+  template: `
+    <div *ngIf="loading$ | async">Loading...</div>
+    <div *ngIf="error$ | async as error" class="error">{{ error }}</div>
+
+    <div *ngFor="let product of products$ | async">
+      {{ product.name }} - {{ product.price | currency }}
+      <button (click)="addToCart(product)">Add to Cart</button>
+    </div>
+  `,
+})
+export class ProductsComponent {
+  private store = inject(Store);
+
+  // Select state slices (returns Observable)
+  products$ = this.store.select(selectAllProducts);
+  loading$ = this.store.select(selectProductsLoading);
+  error$ = this.store.select(selectProductsError);
+
+  ngOnInit() {
+    // Dispatch action to load products
+    this.store.dispatch(loadProducts());
+  }
+
+  addToCart(product: Product) {
+    this.store.dispatch(addToCart({
+      productId: product.id,
+      quantity: 1
+    }));
+  }
+}
+```
+
+---
+
+## 4. SELECTORS - Querying State Efficiently
+
+Selectors are **pure functions** that extract and transform data from the store. They are **memoized** - they only recalculate when their inputs change.
+
+### Why Use Selectors?
+
+1. **Memoization** - Cached results, no unnecessary recalculations
+2. **Composition** - Build complex selectors from simple ones
+3. **Decoupling** - Components don't know state structure
+4. **Testability** - Pure functions are easy to test
+5. **Reusability** - Same selector across multiple components
+
+### Creating Selectors
+
+```typescript
+import { createFeatureSelector, createSelector } from '@ngrx/store';
+
+// 1. Feature selector - selects a slice of root state
+export const selectProductsState =
+  createFeatureSelector<ProductsState>('products');
+
+// 2. Basic selectors - extract properties
 export const selectAllProducts = createSelector(
   selectProductsState,
   (state) => state.products
 );
 
-// Composed/derived selectors (memoized!)
-export const selectCartTotal = createSelector(
-  selectCartSubtotal,
-  selectCartTax,
-  (subtotal, tax) => subtotal + tax
+export const selectProductsLoading = createSelector(
+  selectProductsState,
+  (state) => state.loading
 );
 
-// Parameterized selector
-export const selectProductById = (id: number) => createSelector(
-  selectAllProducts,
-  (products) => products.find(p => p.id === id)
+export const selectProductsError = createSelector(
+  selectProductsState,
+  (state) => state.error
 );
+
+export const selectSelectedProductId = createSelector(
+  selectProductsState,
+  (state) => state.selectedProductId
+);
+
+// 3. Composed selectors - combine multiple selectors
+export const selectSelectedProduct = createSelector(
+  selectAllProducts,
+  selectSelectedProductId,
+  (products, selectedId) =>
+    products.find(p => p.id === selectedId) ?? null
+);
+
+// 4. Derived data selectors
+export const selectProductCount = createSelector(
+  selectAllProducts,
+  (products) => products.length
+);
+
+export const selectProductsInStock = createSelector(
+  selectAllProducts,
+  (products) => products.filter(p => p.stock > 0)
+);
+
+export const selectTotalInventoryValue = createSelector(
+  selectAllProducts,
+  (products) => products.reduce((sum, p) => sum + p.price * p.stock, 0)
+);
+```
+
+### Parameterized Selectors (Factory Functions)
+
+```typescript
+// Selector that takes a parameter
+export const selectProductById = (productId: number) =>
+  createSelector(
+    selectAllProducts,
+    (products) => products.find(p => p.id === productId)
+  );
+
+// Usage in component
+product$ = this.store.select(selectProductById(123));
+
+// Selector with props (alternative)
+export const selectProductsByCategory = (category: string) =>
+  createSelector(
+    selectAllProducts,
+    (products) => products.filter(p => p.category === category)
+  );
+```
+
+### Combining Selectors from Multiple Features
+
+```typescript
+// Cross-feature selector
+export const selectCartWithProducts = createSelector(
+  selectCartItems,       // From cart feature
+  selectAllProducts,     // From products feature
+  (cartItems, products) =>
+    cartItems.map(item => ({
+      ...item,
+      product: products.find(p => p.id === item.productId)
+    }))
+);
+```
+
+### Selector Memoization Visualization
+
+```
+First call:
+selectCartTotal(state)
+  → selectCartItems(state)          ← COMPUTE
+  → reduce to total                 ← COMPUTE
+  → return 150                      ← CACHE
+
+Second call (state unchanged):
+selectCartTotal(state)
+  → return 150                      ← CACHED! No computation
+
+Third call (state changed):
+selectCartTotal(newState)
+  → selectCartItems(newState)       ← COMPUTE (state changed)
+  → reduce to total                 ← COMPUTE
+  → return 175                      ← CACHE
 ```
 
 ---
 
-### Effects - Side Effects (API Calls)
+## 5. EFFECTS - Handling Side Effects
+
+Effects handle **side effects** - operations that interact with the outside world: API calls, localStorage, routing, logging, etc.
+
+### Effect Anatomy
 
 ```typescript
+import { Injectable, inject } from '@angular/core';
+import { Actions, createEffect, ofType } from '@ngrx/effects';
+import { of } from 'rxjs';
+import { map, catchError, switchMap, tap } from 'rxjs/operators';
+
 @Injectable()
 export class ProductsEffects {
+  private actions$ = inject(Actions);
+  private http = inject(HttpClient);
 
+  // Effect that dispatches a new action
   loadProducts$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(loadProducts),                    // Listen for action
-      switchMap(() =>                          // Cancel previous
+      ofType(loadProducts),                    // Filter for this action
+      switchMap(() =>                          // Switch to HTTP observable
         this.http.get<Product[]>('/api/products').pipe(
           map(products => loadProductsSuccess({ products })),
-          catchError(err => of(loadProductsFailure({ error: err.message })))
+          catchError(error =>
+            of(loadProductsFailure({ error: error.message }))
+          )
         )
       )
     )
   );
 
-  // Effect without dispatch (side effect only)
-  logError$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(loadProductsFailure),
-      tap(({ error }) => console.error('Failed:', error))
-    ),
-    { dispatch: false }
+  // Effect that does NOT dispatch (side effect only)
+  logActions$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        tap(action => console.log('Action:', action))
+      ),
+    { dispatch: false }  // ← Important!
   );
 }
 ```
 
----
+### Effect Flow Visualization
 
-### Using in Components
+```
+User clicks "Load Products" button
+         │
+         ▼
+┌─────────────────────────────────────┐
+│  store.dispatch(loadProducts())     │
+└──────────────────┬──────────────────┘
+                   │
+    ┌──────────────┴──────────────┐
+    │                             │
+    ▼                             ▼
+┌────────────────┐       ┌────────────────────────────┐
+│    REDUCER     │       │         EFFECT              │
+│                │       │                             │
+│ state.loading  │       │ ofType(loadProducts)       │
+│   = true       │       │          │                 │
+└────────────────┘       │          ▼                 │
+                         │ switchMap(() =>            │
+                         │   http.get('/api/products')│
+                         │ )                          │
+                         │          │                 │
+                         │          ▼                 │
+                         │ map(products =>            │
+                         │   loadProductsSuccess()    │
+                         │ )                          │
+                         └────────────┬───────────────┘
+                                      │
+                                      ▼ dispatch
+                         ┌────────────────────────────┐
+                         │     REDUCER                 │
+                         │                             │
+                         │ on(loadProductsSuccess)     │
+                         │   state.products = products │
+                         │   state.loading = false     │
+                         └────────────────────────────┘
+```
+
+### Effect Operator Selection Guide
+
+| Scenario | Operator | Why |
+|----------|----------|-----|
+| **Search, Autocomplete, Navigation** | `switchMap` | Cancel previous, only latest matters |
+| **Bulk fetch, Parallel downloads** | `mergeMap` | All requests run simultaneously |
+| **Sequential saves, Transactions** | `concatMap` | Wait for each to complete |
+| **Form submit, Payment** | `exhaustMap` | Ignore new while processing |
 
 ```typescript
-@Component({...})
-export class ProductListComponent {
-  // Select state (returns Observable)
-  products$ = this.store.select(selectAllProducts);
-  loading$ = this.store.select(selectProductsLoading);
+// switchMap - Search (cancel old searches)
+search$ = createEffect(() =>
+  this.actions$.pipe(
+    ofType(search),
+    debounceTime(300),
+    switchMap(({ term }) =>
+      this.http.get(`/api/search?q=${term}`).pipe(
+        map(results => searchSuccess({ results })),
+        catchError(error => of(searchFailure({ error })))
+      )
+    )
+  )
+);
 
-  constructor(private store: Store) {}
+// exhaustMap - Form submit (ignore double-clicks)
+submitOrder$ = createEffect(() =>
+  this.actions$.pipe(
+    ofType(submitOrder),
+    exhaustMap(({ order }) =>
+      this.http.post('/api/orders', order).pipe(
+        map(response => submitOrderSuccess({ orderId: response.id })),
+        catchError(error => of(submitOrderFailure({ error })))
+      )
+    )
+  )
+);
 
-  ngOnInit() {
-    this.store.dispatch(loadProducts());  // Dispatch action
-  }
+// concatMap - Sequential operations
+saveItems$ = createEffect(() =>
+  this.actions$.pipe(
+    ofType(saveAllItems),
+    concatMap(({ items }) =>
+      from(items).pipe(
+        concatMap(item => this.http.post('/api/items', item)),
+        toArray(),
+        map(() => saveAllItemsSuccess()),
+        catchError(error => of(saveAllItemsFailure({ error })))
+      )
+    )
+  )
+);
+```
 
-  addToCart(product: Product) {
-    this.store.dispatch(addToCart({ product, quantity: 1 }));
+### Common Effect Patterns
+
+```typescript
+// Pattern 1: Navigation after success
+createOrder$ = createEffect(() =>
+  this.actions$.pipe(
+    ofType(createOrderSuccess),
+    tap(({ orderId }) => this.router.navigate(['/orders', orderId]))
+  ),
+  { dispatch: false }
+);
+
+// Pattern 2: localStorage persistence
+persistCart$ = createEffect(() =>
+  this.actions$.pipe(
+    ofType(addToCart, removeFromCart, clearCart),
+    withLatestFrom(this.store.select(selectCartItems)),
+    tap(([_, items]) => localStorage.setItem('cart', JSON.stringify(items)))
+  ),
+  { dispatch: false }
+);
+
+// Pattern 3: Show notification
+showError$ = createEffect(() =>
+  this.actions$.pipe(
+    ofType(loadProductsFailure, saveOrderFailure),
+    tap(({ error }) => this.snackbar.open(error, 'Dismiss'))
+  ),
+  { dispatch: false }
+);
+```
+
+---
+
+## 6. ENTITY ADAPTER - Managing Collections
+
+Entity Adapter provides **CRUD operations** for normalized entity collections. It's like a mini-database for your state.
+
+### Why Use Entity Adapter?
+
+- **Normalized state** - Entities stored by ID in a dictionary
+- **Fast lookups** - O(1) access by ID
+- **Built-in CRUD** - Add, update, remove operations
+- **Sorted collections** - Optional sorting
+
+### Entity State Structure
+
+```typescript
+// What Entity Adapter creates
+interface EntityState<T> {
+  ids: string[] | number[];     // Array of IDs (maintains order)
+  entities: { [id: string]: T }; // Dictionary for fast lookup
+}
+
+// Example state:
+{
+  ids: [1, 2, 3],
+  entities: {
+    1: { id: 1, name: 'Product A', price: 10 },
+    2: { id: 2, name: 'Product B', price: 20 },
+    3: { id: 3, name: 'Product C', price: 30 },
   }
 }
 ```
 
-```html
-<!-- Template with async pipe -->
-<div *ngIf="loading$ | async">Loading...</div>
+### Setting Up Entity Adapter
 
-<div *ngFor="let product of products$ | async">
-  {{ product.name }}
-  <button (click)="addToCart(product)">Add</button>
-</div>
+```typescript
+import { EntityState, EntityAdapter, createEntityAdapter } from '@ngrx/entity';
+
+// 1. Define entity
+export interface Product {
+  id: number;
+  name: string;
+  price: number;
+}
+
+// 2. Extend EntityState for your state
+export interface ProductsState extends EntityState<Product> {
+  selectedProductId: number | null;
+  loading: boolean;
+  error: string | null;
+}
+
+// 3. Create adapter
+export const productsAdapter: EntityAdapter<Product> = createEntityAdapter<Product>({
+  selectId: (product) => product.id,     // How to get ID
+  sortComparer: (a, b) => a.name.localeCompare(b.name), // Optional sorting
+});
+
+// 4. Create initial state
+export const initialState: ProductsState = productsAdapter.getInitialState({
+  selectedProductId: null,
+  loading: false,
+  error: null,
+});
+```
+
+### Entity Adapter Operations
+
+```typescript
+export const productsReducer = createReducer(
+  initialState,
+
+  // Add one entity
+  on(addProduct, (state, { product }) =>
+    productsAdapter.addOne(product, state)
+  ),
+
+  // Add many entities
+  on(loadProductsSuccess, (state, { products }) =>
+    productsAdapter.setAll(products, { ...state, loading: false })
+  ),
+
+  // Update one entity
+  on(updateProduct, (state, { update }) =>
+    productsAdapter.updateOne(update, state)
+    // update = { id: 1, changes: { price: 25 } }
+  ),
+
+  // Update many entities
+  on(updateProducts, (state, { updates }) =>
+    productsAdapter.updateMany(updates, state)
+  ),
+
+  // Upsert (add or update)
+  on(upsertProduct, (state, { product }) =>
+    productsAdapter.upsertOne(product, state)
+  ),
+
+  // Remove one
+  on(removeProduct, (state, { id }) =>
+    productsAdapter.removeOne(id, state)
+  ),
+
+  // Remove many
+  on(removeProducts, (state, { ids }) =>
+    productsAdapter.removeMany(ids, state)
+  ),
+
+  // Remove all
+  on(clearProducts, (state) =>
+    productsAdapter.removeAll(state)
+  )
+);
+```
+
+### Entity Selectors
+
+```typescript
+// Get built-in selectors from adapter
+const {
+  selectIds,      // Select array of IDs
+  selectEntities, // Select entity dictionary
+  selectAll,      // Select array of all entities
+  selectTotal,    // Select count of entities
+} = productsAdapter.getSelectors();
+
+// Use with feature selector
+export const selectProductsState =
+  createFeatureSelector<ProductsState>('products');
+
+export const selectAllProducts = createSelector(
+  selectProductsState,
+  selectAll
+);
+
+export const selectProductIds = createSelector(
+  selectProductsState,
+  selectIds
+);
+
+export const selectProductEntities = createSelector(
+  selectProductsState,
+  selectEntities
+);
+
+export const selectProductCount = createSelector(
+  selectProductsState,
+  selectTotal
+);
+
+// Select by ID (using entities dictionary)
+export const selectProductById = (id: number) =>
+  createSelector(
+    selectProductEntities,
+    (entities) => entities[id]
+  );
 ```
 
 ---
 
-### Effect Operator Guide
+## 7. COMPONENT STORE - Local State Management
 
-| Scenario | Operator | Why |
-|----------|----------|-----|
-| Search/Navigation | `switchMap` | Cancel previous request |
-| Bulk operations | `mergeMap` | Run all in parallel |
-| Sequential saves | `concatMap` | Maintain order |
-| Form submit | `exhaustMap` | Ignore while processing |
+ComponentStore is for **local/component-level state** - simpler than global store, perfect for complex components.
 
----
-
-### When to Use NgRx vs Simpler Options
+### When to Use ComponentStore vs Store
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     USE NGRX WHEN:                              │
+│                     USE COMPONENT STORE WHEN:                    │
 ├─────────────────────────────────────────────────────────────────┤
-│  ✓ Shared state between many unrelated components              │
-│  ✓ Complex state with many user interactions                   │
-│  ✓ Need undo/redo or time-travel debugging                     │
-│  ✓ Team needs enforced patterns                                │
-│  ✓ State needs to survive route changes                        │
+│  ✓ State is local to one component or feature                   │
+│  ✓ State doesn't need to persist across routes                  │
+│  ✓ Multiple instances need independent state                    │
+│  ✓ You want simpler, less boilerplate                           │
 ├─────────────────────────────────────────────────────────────────┤
-│                     USE SIMPLER OPTIONS:                        │
+│                     USE GLOBAL STORE WHEN:                       │
 ├─────────────────────────────────────────────────────────────────┤
-│  • Simple services with BehaviorSubject                        │
-│  • Component-local state → ComponentStore                       │
-│  • Server cache → TanStack Query or simple HTTP cache          │
+│  ✓ State is shared across many components                       │
+│  ✓ State needs to survive navigation                            │
+│  ✓ You need time-travel debugging                               │
+│  ✓ Team needs enforced patterns                                 │
 └─────────────────────────────────────────────────────────────────┘
+```
+
+### ComponentStore Example
+
+```typescript
+import { Injectable } from '@angular/core';
+import { ComponentStore } from '@ngrx/component-store';
+import { Observable } from 'rxjs';
+import { switchMap, tap, catchError } from 'rxjs/operators';
+
+interface ProductListState {
+  products: Product[];
+  loading: boolean;
+  error: string | null;
+  filter: string;
+}
+
+@Injectable()
+export class ProductListStore extends ComponentStore<ProductListState> {
+  constructor(private http: HttpClient) {
+    super({
+      products: [],
+      loading: false,
+      error: null,
+      filter: '',
+    });
+  }
+
+  // Selectors
+  readonly products$ = this.select(state => state.products);
+  readonly loading$ = this.select(state => state.loading);
+  readonly filter$ = this.select(state => state.filter);
+
+  // Derived selector
+  readonly filteredProducts$ = this.select(
+    this.products$,
+    this.filter$,
+    (products, filter) =>
+      products.filter(p =>
+        p.name.toLowerCase().includes(filter.toLowerCase())
+      )
+  );
+
+  // Updaters (like reducers)
+  readonly setFilter = this.updater((state, filter: string) => ({
+    ...state,
+    filter,
+  }));
+
+  readonly setProducts = this.updater((state, products: Product[]) => ({
+    ...state,
+    products,
+    loading: false,
+  }));
+
+  // Effects
+  readonly loadProducts = this.effect((trigger$: Observable<void>) =>
+    trigger$.pipe(
+      tap(() => this.patchState({ loading: true, error: null })),
+      switchMap(() =>
+        this.http.get<Product[]>('/api/products').pipe(
+          tap(products => this.setProducts(products)),
+          catchError(error => {
+            this.patchState({ loading: false, error: error.message });
+            return EMPTY;
+          })
+        )
+      )
+    )
+  );
+}
+
+// Usage in component
+@Component({
+  providers: [ProductListStore],  // Each component gets its own instance
+})
+export class ProductListComponent {
+  store = inject(ProductListStore);
+
+  products$ = this.store.filteredProducts$;
+  loading$ = this.store.loading$;
+
+  ngOnInit() {
+    this.store.loadProducts();
+  }
+
+  onFilterChange(filter: string) {
+    this.store.setFilter(filter);
+  }
+}
 ```
 
 ---
 
-### Quick Setup
+## Best Practices
 
-```bash
-# Install NgRx packages
-ng add @ngrx/store
-ng add @ngrx/effects
-ng add @ngrx/store-devtools
-ng add @ngrx/entity        # Optional: for collections
-ng add @ngrx/component-store  # Optional: for local state
-```
+### 1. State Structure
 
 ```typescript
-// app.config.ts or app.module.ts
-import { provideStore } from '@ngrx/store';
-import { provideEffects } from '@ngrx/effects';
+// ✅ GOOD - Normalized, flat state
+interface AppState {
+  products: {
+    ids: number[];
+    entities: { [id: number]: Product };
+    loading: boolean;
+  };
+  cart: {
+    items: { productId: number; quantity: number }[];
+  };
+}
 
-export const appConfig = {
-  providers: [
-    provideStore({ products: productsReducer, cart: cartReducer }),
-    provideEffects([ProductsEffects, CartEffects])
-  ]
-};
+// ❌ BAD - Nested, denormalized
+interface AppState {
+  cart: {
+    items: {
+      product: {
+        category: {
+          // Deep nesting!
+        };
+      };
+    }[];
+  };
+}
+```
+
+### 2. Action Hygiene
+
+```typescript
+// ✅ GOOD - One action = one event
+loadProducts()
+loadProductsSuccess({ products })
+loadProductsFailure({ error })
+
+// ❌ BAD - Generic "setter" actions
+setProducts({ products })
+setLoading({ loading })
+setError({ error })
+```
+
+### 3. Selector Composition
+
+```typescript
+// ✅ GOOD - Small, composable selectors
+const selectItems = createSelector(selectCart, cart => cart.items);
+const selectPrices = createSelector(selectItems, items => items.map(i => i.price));
+const selectTotal = createSelector(selectPrices, prices => prices.reduce((a, b) => a + b, 0));
+
+// ❌ BAD - One giant selector
+const selectEverything = createSelector(
+  selectState,
+  state => {
+    // 50 lines of logic...
+  }
+);
+```
+
+### 4. Effect Error Handling
+
+```typescript
+// ✅ GOOD - catchError inside switchMap
+loadProducts$ = createEffect(() =>
+  this.actions$.pipe(
+    ofType(loadProducts),
+    switchMap(() =>
+      this.http.get('/api/products').pipe(
+        map(products => loadProductsSuccess({ products })),
+        catchError(error => of(loadProductsFailure({ error })))  // ← Inside!
+      )
+    )
+  )
+);
+
+// ❌ BAD - catchError outside (kills the effect!)
+loadProducts$ = createEffect(() =>
+  this.actions$.pipe(
+    ofType(loadProducts),
+    switchMap(() => this.http.get('/api/products')),
+    map(products => loadProductsSuccess({ products })),
+    catchError(error => of(loadProductsFailure({ error })))  // ← Outside = broken!
+  )
+);
+```
+
+---
+
+## Testing NgRx
+
+### Testing Reducers
+
+```typescript
+describe('Products Reducer', () => {
+  it('should set loading true on loadProducts', () => {
+    const action = loadProducts();
+    const result = productsReducer(initialState, action);
+
+    expect(result.loading).toBe(true);
+    expect(result.error).toBeNull();
+  });
+
+  it('should set products on loadProductsSuccess', () => {
+    const products = [{ id: 1, name: 'Test', price: 10 }];
+    const action = loadProductsSuccess({ products });
+    const result = productsReducer(
+      { ...initialState, loading: true },
+      action
+    );
+
+    expect(result.products).toEqual(products);
+    expect(result.loading).toBe(false);
+  });
+});
+```
+
+### Testing Selectors
+
+```typescript
+describe('Products Selectors', () => {
+  const state: ProductsState = {
+    products: [
+      { id: 1, name: 'A', price: 10 },
+      { id: 2, name: 'B', price: 20 },
+    ],
+    loading: false,
+    error: null,
+  };
+
+  it('should select all products', () => {
+    const result = selectAllProducts.projector(state);
+    expect(result.length).toBe(2);
+  });
+
+  it('should calculate total', () => {
+    const result = selectProductsTotal.projector(state.products);
+    expect(result).toBe(30);
+  });
+});
+```
+
+### Testing Effects
+
+```typescript
+describe('Products Effects', () => {
+  let effects: ProductsEffects;
+  let actions$: Observable<Action>;
+  let httpMock: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
+      providers: [
+        ProductsEffects,
+        provideMockActions(() => actions$),
+      ],
+    });
+
+    effects = TestBed.inject(ProductsEffects);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  it('should load products successfully', () => {
+    const products = [{ id: 1, name: 'Test', price: 10 }];
+    actions$ = of(loadProducts());
+
+    effects.loadProducts$.subscribe(action => {
+      expect(action).toEqual(loadProductsSuccess({ products }));
+    });
+
+    const req = httpMock.expectOne('/api/products');
+    req.flush(products);
+  });
+});
+```
+
+---
+
+## Try It Yourself!
+
+### Interactive Playgrounds
+
+| Route | Description |
+|-------|-------------|
+| `/ngrx-playground` | **Simulated NgRx** - Learn concepts with plain RxJS (no packages) |
+| `/ngrx-real-playground` | **Real NgRx Store** - See actual @ngrx/store in action |
+
+### Project Files
+
+```
+src/app/store/
+├── app.state.ts           # Root state interface
+├── products/
+│   ├── products.actions.ts
+│   ├── products.reducer.ts
+│   ├── products.selectors.ts
+│   ├── products.effects.ts
+│   └── index.ts
+├── cart/
+│   ├── cart.actions.ts
+│   ├── cart.reducer.ts
+│   ├── cart.selectors.ts
+│   ├── cart.effects.ts
+│   └── index.ts
+└── index.ts               # Barrel export
 ```
 
 ---
@@ -785,6 +1727,49 @@ exhaustMap(() => this.http.post('/order'))
 - **NgRx Store**: Many components, complex state logic, need debugging tools, team patterns
 
 Rule of thumb: Start simple, add NgRx when complexity grows.
+
+</details>
+
+<details>
+<summary><strong>Quiz 6: What is Entity Adapter and when to use it?</strong></summary>
+
+**Answer:**
+Entity Adapter manages collections of entities (like products, users) with:
+- Normalized state (dictionary by ID)
+- Built-in CRUD operations (addOne, updateOne, removeOne)
+- Fast O(1) lookups by ID
+- Automatic sorting
+
+Use when you have a list of items with unique IDs that you need to add/update/remove.
+
+</details>
+
+<details>
+<summary><strong>Quiz 7: What's wrong with this effect?</strong></summary>
+
+```typescript
+loadProducts$ = createEffect(() =>
+  this.actions$.pipe(
+    ofType(loadProducts),
+    switchMap(() => this.http.get('/api/products')),
+    map(products => loadProductsSuccess({ products })),
+    catchError(error => of(loadProductsFailure({ error })))
+  )
+);
+```
+
+**Answer:** The `catchError` is OUTSIDE the `switchMap`. If an error occurs, the effect stream dies and won't respond to future actions.
+
+**Fix:** Move `catchError` INSIDE `switchMap`:
+
+```typescript
+switchMap(() =>
+  this.http.get('/api/products').pipe(
+    map(products => loadProductsSuccess({ products })),
+    catchError(error => of(loadProductsFailure({ error })))  // ← Inside!
+  )
+)
+```
 
 </details>
 

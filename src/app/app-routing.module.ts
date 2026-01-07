@@ -7,10 +7,15 @@ import { CheckoutComponent } from './components/checkout/checkout.component';
 import { CartDetailsComponent } from './components/cart-details/cart-details.component';
 import { ProductDetailsComponent } from './components/product-details/product-details.component';
 import { RxjsPlaygroundComponent } from './examples/rxjs-playground.component';
+import { NgrxPlaygroundComponent } from './examples/ngrx-playground.component';
+import { NgrxRealPlaygroundComponent } from './examples/ngrx-real-playground.component';
 import {authGuard} from "./auth.guard";
 
 export const routes: Routes = [
-  {path: 'rxjs-playground', component: RxjsPlaygroundComponent},  // RxJS learning playground
+  // Learning playgrounds
+  {path: 'rxjs-playground', component: RxjsPlaygroundComponent},          // RxJS operators demo
+  {path: 'ngrx-playground', component: NgrxPlaygroundComponent},          // Simulated NgRx (educational)
+  {path: 'ngrx-real-playground', component: NgrxRealPlaygroundComponent}, // Real NgRx store
   {path: 'order-history', component: OrderHistoryComponent, canActivate: [authGuard]},
   {path: 'members', component: MembersPageComponent, canActivate: [authGuard]},
   {path: 'login', component: LoginComponent},
